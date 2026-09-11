@@ -20,13 +20,15 @@ namespace BlaiseFileUploadAlien.Controllers
             _fileDeletionService = fileDeletionService;
         }
 
-        [HttpDelete("{filename}")]
-        public async Task<IActionResult> DeleteFile([FromRoute] string filename, CancellationToken cancellationToken)
+        [HttpPost("delete")]
+        public async Task<IActionResult> DeleteFile([FromBody] FileDeletionDto fileDeletionDto, CancellationToken cancellationToken)
         {
-            if (!IsValidFileName(filename))
+            if (fileDeletionDto == null || !IsValidFileName(fileDeletionDto.Filename))
             {
                 return BadRequest("Filename is invalid or missing.");
             }
+
+            var filename = fileDeletionDto.Filename;
 
             var deleteResult = await _fileDeletionService.DeleteFileAsync(filename, cancellationToken);
 
