@@ -174,16 +174,16 @@ public class FileControllerTests
     [InlineData("folder\\receipt.jpg")]
     public async Task DeleteFile_WhenFilenameIsInvalid_ReturnsBadRequest(string? filename)
     {
-        var result = await _sut.DeleteFile(new FileDeletionDto { Filename = filename! }, CancellationToken.None);
+        var result = await _sut.DeleteFile(BuildDeleteRequestObject(filename), CancellationToken.None);
 
         var bad = Assert.IsType<BadRequestObjectResult>(result);
         Assert.Equal("Filename is invalid or missing.", bad.Value);
     }
 
     [Fact]
-    public async Task DeleteFile_WhenRequestBodyIsNull_ReturnsBadRequest()
+    public async Task DeleteFile_WhenRequestBodyIsMissing_ReturnsBadRequest()
     {
-        var result = await _sut.DeleteFile(null!, CancellationToken.None);
+        var result = await _sut.DeleteFile(default, CancellationToken.None);
 
         var bad = Assert.IsType<BadRequestObjectResult>(result);
         Assert.Equal("Filename is invalid or missing.", bad.Value);
@@ -207,7 +207,23 @@ public class FileControllerTests
             .Setup(s => s.DeleteFileAsync("12345_receipt_ABC12345.jpg", It.IsAny<CancellationToken>()))
             .ReturnsAsync(DeleteFileResult.Deleted);
 
-        var result = await _sut.DeleteFile(new FileDeletionDto { Filename = "12345_receipt_ABC12345.jpg" }, CancellationToken.None);
+        var result = await _sut.DeleteFile(BuildDeleteRequest("12345_receipt_ABC12345.jpg"), CancellationToken.None);
+
+        var contentResult = Assert.IsType<ContentResult>(result);
+        Assert.Equal("application/json", contentResult.ContentType);
+
+        var filename = JsonSerializer.Deserialize<string>(contentResult.Content!);
+        Assert.Equal("12345_receipt_ABC12345.jpg", filename);
+    }
+
+    [Fact]
+    public async Task DeleteFile_WhenRequestBodyContainsFilenameProperty_ReturnsContentWithFilename()
+    {
+        _mockFileDeletionService
+            .Setup(s => s.DeleteFileAsync("12345_receipt_ABC12345.jpg", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(DeleteFileResult.Deleted);
+
+        var result = await _sut.DeleteFile(BuildDeleteRequestObject("12345_receipt_ABC12345.jpg"), CancellationToken.None);
 
         var contentResult = Assert.IsType<ContentResult>(result);
         Assert.Equal("application/json", contentResult.ContentType);
@@ -223,7 +239,7 @@ public class FileControllerTests
             .Setup(s => s.DeleteFileAsync("12345_receipt_ABC12345.jpg", It.IsAny<CancellationToken>()))
             .ReturnsAsync(DeleteFileResult.NotFound);
 
-        var result = await _sut.DeleteFile(new FileDeletionDto { Filename = "12345_receipt_ABC12345.jpg" }, CancellationToken.None);
+        var result = await _sut.DeleteFile(BuildDeleteRequest("12345_receipt_ABC12345.jpg"), CancellationToken.None);
 
         var notFound = Assert.IsType<NotFoundObjectResult>(result);
         Assert.Equal("File not found.", notFound.Value);
@@ -236,7 +252,7 @@ public class FileControllerTests
             .Setup(s => s.DeleteFileAsync("12345_receipt_ABC12345.jpg", It.IsAny<CancellationToken>()))
             .ReturnsAsync(DeleteFileResult.Error);
 
-        var result = await _sut.DeleteFile(new FileDeletionDto { Filename = "12345_receipt_ABC12345.jpg" }, CancellationToken.None);
+        var result = await _sut.DeleteFile(BuildDeleteRequest("12345_receipt_ABC12345.jpg"), CancellationToken.None);
 
         var error = Assert.IsType<ObjectResult>(result);
         Assert.Equal(500, error.StatusCode);
@@ -250,7 +266,7 @@ public class FileControllerTests
             .Setup(s => s.DeleteFileAsync("12345_receipt_ABC12345.jpg", It.IsAny<CancellationToken>()))
             .ReturnsAsync(DeleteFileResult.Deleted);
 
-        await _sut.DeleteFile(new FileDeletionDto { Filename = "12345_receipt_ABC12345.jpg" }, CancellationToken.None);
+        await _sut.DeleteFile(BuildDeleteRequest("12345_receipt_ABC12345.jpg"), CancellationToken.None);
 
         _mockFileDeletionService.Verify(
             s => s.DeleteFileAsync("12345_receipt_ABC12345.jpg", It.IsAny<CancellationToken>()),
@@ -258,4 +274,14 @@ public class FileControllerTests
     }
 
     #endregion
+
+    private static JsonElement BuildDeleteRequest(string? filename)
+    {
+        return JsonSerializer.SerializeToElement(filename);
+    }
+
+    private static JsonElement BuildDeleteRequestObject(string? filename)
+    {
+        return JsonSerializer.SerializeToElement(new { Filename = filename });
+    }
 }

@@ -91,8 +91,8 @@ Blaise File Upload Alien is a minimal ASP.NET Core Web API (using .NET 10) for m
 
 - **POST** `/api/file/delete`
   - Deletes the named file from the configured GCP storage bucket.
-  - Accepts a JSON body with:
-    - `Filename` (string): The filename returned by `POST /api/file`.
+  - Accepts the filename returned by `POST /api/file` as a JSON string body, for example `"12345_receipt_ABC12345.jpg"`.
+  - Also accepts a JSON object body with `Filename` for manual/API testing.
   - `Filename` must be a non-empty plain filename and must not contain `/`, `\`, `../`, or `..\` path components.
   - Responses:
     - `200 OK`: The file was deleted. Returns the deleted filename.

@@ -21,16 +21,16 @@ namespace BlaiseFileUploadAlien.Controllers
         }
 
         [HttpPost("delete")]
-        public async Task<IActionResult> DeleteFile([FromBody] FileDeletionDto fileDeletionDto, CancellationToken cancellationToken)
+        public async Task<IActionResult> DeleteFile([FromBody] JsonElement fileDeletionRequest, CancellationToken cancellationToken)
         {
-            if (fileDeletionDto == null || !IsValidFileName(fileDeletionDto.Filename))
+            var filename = GetFilename(fileDeletionRequest);
+
+            if (!IsValidFileName(filename))
             {
                 return BadRequest("Filename is invalid or missing.");
             }
 
-            var filename = fileDeletionDto.Filename;
-
-            var deleteResult = await _fileDeletionService.DeleteFileAsync(filename, cancellationToken);
+            var deleteResult = await _fileDeletionService.DeleteFileAsync(filename!, cancellationToken);
 
             return deleteResult switch
             {
@@ -63,6 +63,28 @@ namespace BlaiseFileUploadAlien.Controllers
         }
 
 
+
+        private static string? GetFilename(JsonElement fileDeletionRequest)
+        {
+            if (fileDeletionRequest.ValueKind == JsonValueKind.String)
+            {
+                return fileDeletionRequest.GetString();
+            }
+
+            if (fileDeletionRequest.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var property in fileDeletionRequest.EnumerateObject())
+                {
+                    if (property.Name.Equals("filename", StringComparison.OrdinalIgnoreCase) &&
+                        property.Value.ValueKind == JsonValueKind.String)
+                    {
+                        return property.Value.GetString();
+                    }
+                }
+            }
+
+            return null;
+        }
 
         private static bool IsValidFileName(string? filename)
         {
