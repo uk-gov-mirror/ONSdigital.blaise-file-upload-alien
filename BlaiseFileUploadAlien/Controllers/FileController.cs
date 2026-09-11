@@ -34,7 +34,7 @@ namespace BlaiseFileUploadAlien.Controllers
 
             return deleteResult switch
             {
-                DeleteFileResult.Deleted => NoContent(),
+                DeleteFileResult.Deleted => Content(JsonSerializer.Serialize(filename), "application/json"),
                 DeleteFileResult.NotFound => NotFound("File not found."),
                 _ => StatusCode(500, "Internal Server Error")
             };

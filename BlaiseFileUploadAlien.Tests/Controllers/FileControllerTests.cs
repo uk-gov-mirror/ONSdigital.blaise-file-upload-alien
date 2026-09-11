@@ -201,7 +201,7 @@ public class FileControllerTests
     }
 
     [Fact]
-    public async Task DeleteFile_WhenServiceReturnsDeleted_ReturnsNoContent()
+    public async Task DeleteFile_WhenServiceReturnsDeleted_ReturnsContentWithFilename()
     {
         _mockFileDeletionService
             .Setup(s => s.DeleteFileAsync("12345_receipt_ABC12345.jpg", It.IsAny<CancellationToken>()))
@@ -209,7 +209,11 @@ public class FileControllerTests
 
         var result = await _sut.DeleteFile(new FileDeletionDto { Filename = "12345_receipt_ABC12345.jpg" }, CancellationToken.None);
 
-        Assert.IsType<NoContentResult>(result);
+        var contentResult = Assert.IsType<ContentResult>(result);
+        Assert.Equal("application/json", contentResult.ContentType);
+
+        var filename = JsonSerializer.Deserialize<string>(contentResult.Content!);
+        Assert.Equal("12345_receipt_ABC12345.jpg", filename);
     }
 
     [Fact]
