@@ -7,6 +7,13 @@ EXPORT FileId : STRING
 ALIEN('POST', 'http://localhost:5123/api/file')
 ENDPROCEDURE
 
+PROCEDURE DeleteFile
+PARAMETERS
+   Filename : STRING
+EXPORT DeleteResult : STRING
+ALIEN('POST', 'http://localhost:5123/api/file/delete')
+ENDPROCEDURE
+
 BLOCK bFile
 PARAMETERS Identifier : STRING // used to identify the file once it's processed on the server
 FIELDS
